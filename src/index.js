@@ -7,7 +7,7 @@ const Alexa = require('alexa-sdk');
 
 //Replace with your app ID (OPTIONAL).  You can find this value at the top of your skill's page on http://developer.amazon.com.
 //Make sure to enclose your value in quotes, like this:  var APP_ID = "amzn1.ask.skill.bb4045e6-b3e8-4133-b650-72923c5980f1";
-var APP_ID = undefined;
+var APP_ID = process.env.APP_ID;
 
 //This function returns a descriptive sentence about your data.  Before a user starts a quiz, they can ask about a specific data element,
 //like "Ohio."  The skill will speak the sentence from this function, pulling the data values from the appropriate record in your data.
@@ -30,6 +30,8 @@ function getQuestion(counter, property, item)
 //a state abbreviation, we add some SSML to make sure that Alexa spells that abbreviation out (instead of trying to pronounce it.)
 function getAnswer(property, item)
 {
+    return "The state bird of " + item.StateName + " is " + item[property] + ". "
+    /*
     switch(property)
     {
         case "BirdName":
@@ -39,6 +41,7 @@ function getAnswer(property, item)
             return "The state bird of " + item.StateName + " is " + item[property] + ". "
         break;
     }
+    */
 }
 
 //This is a list of positive speechcons that this skill will use when a user gets a correct answer.  For a full list of supported
@@ -56,7 +59,7 @@ var speechConsWrong = ["Argh", "Aw man", "Blarg", "Blast", "Boo", "Bummer", "Dar
 var WELCOME_MESSAGE = "Welcome to the State Bird Quiz Game!  You can ask me a question like 'What is the state bird of Oregon', or you can ask me to start a quiz.  What would you like to do?";
 
 //This is the message a user will hear when they start a quiz.
-var START_QUIZ_MESSAGE = "OK.  I will ask you the state bird for 10 different states.";
+var START_QUIZ_MESSAGE = "OK, here are the rules.  I will ask you the state bird for 10 different states. Reply with the state name or I don't know. ";
 
 //This is the message a user will hear when they try to cancel or stop the skill, or when they finish a quiz.
 var EXIT_SKILL_MESSAGE = "Thank you for playing the State Bird Quiz Game!  Let's play again soon!";
@@ -74,7 +77,8 @@ var ERROR_MESSAGE = "Sorry, I didn't get that. You can ask me about a state, and
 
 //This is the response a user will receive when they ask about something we weren't expecting.  For example, say "pizza" to your
 //skill when it starts.  This is the response you will receive.
-function getBadAnswer(item) { return "I'm sorry. " + item + " is not something I know very much about in this skill. " + HELP_MESSAGE; }
+//function getBadAnswer(item) { return "I'm sorry. I don't understand " + item + " is not something I know very much about in this skill. " + HELP_MESSAGE; }
+function getBadAnswer(item) { return "I'm sorry. I don't understand " + item; }
 
 //This is the message a user will receive after each question of a quiz.  It reminds them of their current score.
 function getCurrentScore(score, counter) { return "Your current score is " + score + " out of " + counter + ". "; }
@@ -317,6 +321,7 @@ var quizHandlers = Alexa.CreateStateHandler(states.QUIZ,{
         this.emitWithState("AskQuestion");
     },
     "AskQuestion": function() {
+
         if (this.attributes["counter"] == 0)
         {
             this.attributes["response"] = START_QUIZ_MESSAGE + " ";
@@ -338,10 +343,15 @@ var quizHandlers = Alexa.CreateStateHandler(states.QUIZ,{
         this.emit(":ask", speech, question);
     },
     "AnswerIntent": function() {
+
+        var item1 = getItem(this.event.request.intent.slots);
         var response = "";
         var item = this.attributes["quizitem"];
         var property = this.attributes["quizproperty"]
 //Investigate here
+//        this.emit(":tell", "this.event.request.intent.slots: "+this.event.request.intent.slots);
+        //this.emit(":tell", "item.property: "+item[property]);
+
         var correct = compareSlots(this.event.request.intent.slots, item[property]);
 
         if (correct)
